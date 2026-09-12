@@ -4,3 +4,7 @@ compatibility_date = "2026-09-12"
 
 [browser]
 binding = "BROWSER"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"

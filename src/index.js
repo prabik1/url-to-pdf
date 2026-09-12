@@ -2,9 +2,13 @@ import puppeteer from "@cloudflare/puppeteer";
 
 export default {
   async fetch(request, env) {
+    if (request.method === "GET") {
+      return env.ASSETS.fetch(request);
+    }
+
     if (request.method !== "POST") {
-      return new Response("URL to PDF Worker is running.", {
-        status: 200,
+      return new Response("Method Not Allowed", {
+        status: 405,
       });
     }
 
