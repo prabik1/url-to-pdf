@@ -1,0 +1,6 @@
+name = "url-to-pdf"
+main = "src/index.js"
+compatibility_date = "2026-09-12"
+
+[browser]
+binding = "BROWSER"
