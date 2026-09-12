@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Loader + Cloudflare Worker PDF conversion
+    // Cloudflare Worker PDF conversion
     const loader = document.getElementById('loader');
     const form = document.getElementById('html-to-pdf-form');
 
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const response = await fetch(
-                'https://url-to-pdf.prabik.workers.dev/',
+                'https://url-to-pdf.prabik.workers.dev/convert',
                 {
                     method: 'POST',
                     headers: {
@@ -63,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = 'converted.pdf';
+
             document.body.appendChild(link);
             link.click();
             link.remove();

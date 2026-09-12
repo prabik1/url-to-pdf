@@ -2,8 +2,10 @@ import puppeteer from "@cloudflare/puppeteer";
 
 export default {
   async fetch(request, env) {
-    // PDF API
-    if (request.method === "POST") {
+    const url = new URL(request.url);
+
+    // PDF conversion API
+    if (url.pathname === "/convert" && request.method === "POST") {
       try {
         const data = await request.json();
 
@@ -21,6 +23,7 @@ export default {
           });
         } else {
           await browser.close();
+
           return new Response("Please provide a URL or HTML.", {
             status: 400,
           });
@@ -48,12 +51,14 @@ export default {
       } catch (error) {
         return new Response(
           "PDF generation failed: " + error.message,
-          { status: 500 }
+          {
+            status: 500,
+          }
         );
       }
     }
 
-    // Frontend
+    // Frontend / static assets
     return env.ASSETS.fetch(request);
   },
 };
