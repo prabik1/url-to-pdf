@@ -1,0 +1,7 @@
+{
+    "require": {
+        "mpdf/mpdf": "^6.1",
+        "smalot/pdfparser": "^2.12",
+        "dompdf/dompdf": "^3.1"
+    }
+}

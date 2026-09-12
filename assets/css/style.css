@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --secondary: #10B981;
+    --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text-main: #1F2937;
+    --text-muted: #6B7280;
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Background animated blobs */
+.bg-blobs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+.blob {
+    position: absolute;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: float 10s infinite ease-in-out alternate;
+}
+.blob-1 {
+    top: -10%; left: -10%;
+    width: 500px; height: 500px;
+    background: #4F46E5;
+    animation-delay: 0s;
+}
+.blob-2 {
+    bottom: -10%; right: -10%;
+    width: 600px; height: 600px;
+    background: #10B981;
+    animation-delay: -5s;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, 50px) scale(1.1); }
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 24px;
+    padding: 2.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Header */
+.app-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.app-title {
+    font-weight: 700;
+    font-size: 3rem;
+    background: -webkit-linear-gradient(45deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+/* Custom Tabs */
+.custom-nav-tabs {
+    border: none;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50px;
+    padding: 5px;
+    display: inline-flex;
+    margin-bottom: 2rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.custom-nav-tabs .nav-link {
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 10px 30px;
+    transition: all 0.3s ease;
+}
+
+.custom-nav-tabs .nav-link:hover {
+    color: var(--primary);
+}
+
+.custom-nav-tabs .nav-link.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* File Upload Area */
+.upload-area {
+    border: 2px dashed #D1D5DB;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    background: rgba(249, 250, 251, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-area:hover, .upload-area.dragover {
+    border-color: var(--primary);
+    background: rgba(238, 242, 255, 0.5);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.upload-area:hover .upload-icon {
+    transform: scale(1.1);
+}
+
+.file-input {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
+}
+
+.file-name-display {
+    margin-top: 1rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+/* Buttons */
+.btn-custom {
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    color: white;
+}
+
+/* Loader */
+.loader-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.loader-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(79, 70, 229, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Textarea for direct input */
+.custom-textarea {
+    border-radius: 12px;
+    border: 1px solid #D1D5DB;
+    padding: 1rem;
+    font-family: monospace;
+    resize: vertical;
+    min-height: 200px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.custom-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+/* ── PDF Size Selector ─────────────────────────────────────────── */
+.pdf-size-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.size-option {
+    cursor: pointer;
+    flex: 1 1 calc(25% - 12px);
+    min-width: 90px;
+}
+
+.size-option input[type="radio"] {
+    display: none;
+}
+
+.size-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 14px 10px;
+    border: 2px solid #D1D5DB;
+    border-radius: 14px;
+    background: rgba(249, 250, 251, 0.6);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: center;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.size-card small {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: #9CA3AF;
+    display: block;
+    margin-top: 2px;
+}
+
+.size-card:hover {
+    border-color: var(--primary);
+    background: rgba(238, 242, 255, 0.6);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
+}
+
+.size-card.selected {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(79,70,229,0.1), rgba(79,70,229,0.06));
+    color: var(--primary);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.18);
+}
+
+.size-card.selected small {
+    color: var(--primary);
+    opacity: 0.75;
+}
+
+.size-card i {
+    font-size: 1.1rem;
+}
