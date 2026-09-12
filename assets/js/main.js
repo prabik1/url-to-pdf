@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const response = await fetch(
-                'https://url-to-pdf.prabikdhungana13.workers.dev/',
+                'https://url-to-pdf.prabik.workers.dev/',
                 {
                     method: 'POST',
                     headers: {
