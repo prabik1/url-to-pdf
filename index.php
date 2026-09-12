@@ -52,7 +52,7 @@
                         <div class="glass-card">
                             <h3 class="fw-bold mb-4">Convert HTML to PDF</h3>
                             
-                            <form action="convert.php" method="POST" enctype="multipart/form-data" id="html-to-pdf-form">
+                            <form action="https://url-to-pdf.prabikdhungana13.workers.dev/" method="POST" enctype="multipart/form-data" id="html-to-pdf-form">
                                 <input type="hidden" name="action" value="html_to_pdf">
                                 
                                 <!-- Input Method Tabs -->
