@@ -62,7 +62,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = 'converted.pdf';
+
+            // Get filename from Cloudflare Worker
+            const disposition = response.headers.get('Content-Disposition');
+
+            let filename = 'converted.pdf';
+
+            if (disposition) {
+                const match = disposition.match(/filename="([^"]+)"/);
+
+                if (match) {
+                    filename = match[1];
+                }
+            }
+
+            link.download = filename;
 
             document.body.appendChild(link);
             link.click();
