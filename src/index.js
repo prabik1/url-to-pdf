@@ -23,7 +23,7 @@ export default {
         browser = await puppeteer.launch(env.BROWSER);
         const page = await browser.newPage();
 
-        // Better page loading
+        // Browser viewport
         await page.setViewport({
           width: 1440,
           height: 900,
@@ -32,15 +32,21 @@ export default {
 
         await page.emulateMediaType("screen");
 
+        // --------------------------------------------------
+        // LOAD PAGE
+        // --------------------------------------------------
+
         if (data.url) {
           await page.goto(data.url, {
-            waitUntil: "networkidle2",
-            timeout: 120000,
+            // DOM is usually available much faster than
+            // networkidle2 on modern websites.
+            waitUntil: "domcontentloaded",
+            timeout: 60000,
           });
         } else if (data.html) {
           await page.setContent(data.html, {
-            waitUntil: "networkidle2",
-            timeout: 120000,
+            waitUntil: "domcontentloaded",
+            timeout: 60000,
           });
         } else {
           return new Response("Please provide a URL or HTML.", {
@@ -48,118 +54,236 @@ export default {
           });
         }
 
-        // Give JavaScript-heavy pages time to finish rendering
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        // --------------------------------------------------
+        // WAIT FOR PAGE TO FINISH LOADING
+        // --------------------------------------------------
 
-        // Wait for fonts
-        await page.evaluate(async () => {
-          if (document.fonts && document.fonts.ready) {
-            await document.fonts.ready;
-          }
-        });
-
-        // Try to close common cookie/consent popups
-        await page.evaluate(() => {
-          const cookieButtonTexts = [
-            "accept",
-            "accept all",
-            "allow all",
-            "agree",
-            "i agree",
-            "got it",
-            "ok",
-            "okay",
-            "continue",
-            "consent",
-            "allow cookies",
-            "accept cookies"
-          ];
-
-          const elements = Array.from(
-            document.querySelectorAll("button, a, input[type='button'], input[type='submit']")
+        // Wait for document.readyState to become "complete".
+        // Maximum wait: 15 seconds.
+        try {
+          await page.waitForFunction(
+            () => document.readyState === "complete",
+            {
+              timeout: 15000,
+            }
           );
+        } catch {
+          // Continue even if the page never reports complete.
+        }
 
-          elements.forEach(el => {
-            const text = (
-              el.innerText ||
-              el.value ||
-              el.getAttribute("aria-label") ||
-              ""
-            ).trim().toLowerCase();
+        // --------------------------------------------------
+        // WAIT FOR IMAGES
+        // --------------------------------------------------
 
-            if (
-              cookieButtonTexts.some(
-                keyword =>
-                  text === keyword ||
-                  text.includes(keyword)
-              )
-            ) {
-              try {
-                el.click();
-              } catch {}
+        // Images can continue loading after the document is ready.
+        // Wait for them, but never wait forever.
+        try {
+          await page.evaluate(async () => {
+            const images = Array.from(document.images);
+
+            if (!images.length) {
+              return;
+            }
+
+            await Promise.race([
+              Promise.all(
+                images.map((img) => {
+                  if (img.complete) {
+                    return Promise.resolve();
+                  }
+
+                  return new Promise((resolve) => {
+                    img.addEventListener("load", resolve, {
+                      once: true,
+                    });
+
+                    img.addEventListener("error", resolve, {
+                      once: true,
+                    });
+                  });
+                })
+              ),
+
+              new Promise((resolve) => {
+                setTimeout(resolve, 10000);
+              }),
+            ]);
+          });
+        } catch {
+          // Continue if image detection fails.
+        }
+
+        // --------------------------------------------------
+        // WAIT FOR FONTS
+        // --------------------------------------------------
+
+        try {
+          await page.evaluate(async () => {
+            if (document.fonts && document.fonts.ready) {
+              await Promise.race([
+                document.fonts.ready,
+                new Promise((resolve) => {
+                  setTimeout(resolve, 5000);
+                }),
+              ]);
             }
           });
-        });
+        } catch {
+          // Continue if font detection fails.
+        }
 
-        // Give the page time after cookie popup interaction
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // --------------------------------------------------
+        // TRY TO CLOSE COOKIE / CONSENT POPUPS
+        // --------------------------------------------------
 
-        // Hide common cookie/consent overlays and loading screens
-        await page.evaluate(() => {
-          const selectors = [
-            ".loader",
-            ".loading",
-            ".loading-screen",
-            ".loading-overlay",
-            ".spinner",
-            ".preloader",
-            "#loader",
-            "#loading",
-            "#loading-screen",
-            "#loading-overlay",
+        try {
+          await page.evaluate(() => {
+            const cookieButtonTexts = [
+              "accept",
+              "accept all",
+              "allow all",
+              "agree",
+              "i agree",
+              "got it",
+              "ok",
+              "okay",
+              "continue",
+              "consent",
+              "allow cookies",
+              "accept cookies",
+            ];
 
-            ".cookie",
-            ".cookies",
-            ".cookie-banner",
-            ".cookie-popup",
-            ".cookie-consent",
-            ".cookie-notice",
-            ".consent",
-            ".consent-banner",
-            ".consent-popup",
-            "#cookie-banner",
-            "#cookie-consent",
-            "#cookie-notice",
-            "#consent-banner",
+            const elements = Array.from(
+              document.querySelectorAll(
+                "button, a, input[type='button'], input[type='submit']"
+              )
+            );
 
-            "[class*='loader']",
-            "[class*='loading']",
-            "[class*='cookie']",
-            "[class*='consent']",
-            "[id*='loader']",
-            "[id*='loading']",
-            "[id*='cookie']",
-            "[id*='consent']"
-          ];
+            elements.forEach((el) => {
+              const text = (
+                el.innerText ||
+                el.value ||
+                el.getAttribute("aria-label") ||
+                ""
+              )
+                .trim()
+                .toLowerCase();
 
-          document.querySelectorAll(selectors.join(",")).forEach(el => {
-            el.style.setProperty("display", "none", "important");
-            el.style.setProperty("visibility", "hidden", "important");
-            el.style.setProperty("opacity", "0", "important");
-            el.style.setProperty("pointer-events", "none", "important");
+              if (
+                cookieButtonTexts.some(
+                  (keyword) =>
+                    text === keyword ||
+                    text.includes(keyword)
+                )
+              ) {
+                try {
+                  el.click();
+                } catch {}
+              }
+            });
           });
+        } catch {
+          // Continue if popup detection fails.
+        }
 
-          document.body.style.setProperty(
-            "overflow",
-            "visible",
-            "important"
-          );
-        });
+        // Small delay only after popup interaction.
+        // This is much shorter than the previous 1.5 second wait.
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Allow final repaint
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // --------------------------------------------------
+        // HIDE COMMON LOADERS / COOKIE OVERLAYS
+        // --------------------------------------------------
 
-        // Get a useful filename
+        try {
+          await page.evaluate(() => {
+            const selectors = [
+              ".loader",
+              ".loading",
+              ".loading-screen",
+              ".loading-overlay",
+              ".spinner",
+              ".preloader",
+              "#loader",
+              "#loading",
+              "#loading-screen",
+              "#loading-overlay",
+
+              ".cookie",
+              ".cookies",
+              ".cookie-banner",
+              ".cookie-popup",
+              ".cookie-consent",
+              ".cookie-notice",
+              ".consent",
+              ".consent-banner",
+              ".consent-popup",
+              "#cookie-banner",
+              "#cookie-consent",
+              "#cookie-notice",
+              "#consent-banner",
+
+              "[class*='loader']",
+              "[class*='loading']",
+              "[class*='cookie']",
+              "[class*='consent']",
+              "[id*='loader']",
+              "[id*='loading']",
+              "[id*='cookie']",
+              "[id*='consent']",
+            ];
+
+            document
+              .querySelectorAll(selectors.join(","))
+              .forEach((el) => {
+                el.style.setProperty(
+                  "display",
+                  "none",
+                  "important"
+                );
+
+                el.style.setProperty(
+                  "visibility",
+                  "hidden",
+                  "important"
+                );
+
+                el.style.setProperty(
+                  "opacity",
+                  "0",
+                  "important"
+                );
+
+                el.style.setProperty(
+                  "pointer-events",
+                  "none",
+                  "important"
+                );
+              });
+
+            if (document.body) {
+              document.body.style.setProperty(
+                "overflow",
+                "visible",
+                "important"
+              );
+            }
+          });
+        } catch {
+          // Continue if cleanup fails.
+        }
+
+        // --------------------------------------------------
+        // FINAL SHORT RENDER DELAY
+        // --------------------------------------------------
+
+        // Allows the browser to paint any final changes.
+        // Only 300ms instead of the previous 1 second.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // --------------------------------------------------
+        // GET USEFUL FILENAME
+        // --------------------------------------------------
+
         let filename = "converted-document";
 
         if (data.url) {
@@ -173,8 +297,10 @@ export default {
               filename = safeFilename(title);
             } else {
               // Fallback: hostname + path
-              const host = parsed.hostname
-                .replace(/^www\./, "");
+              const host = parsed.hostname.replace(
+                /^www\./,
+                ""
+              );
 
               const path = parsed.pathname
                 .replace(/^\/+|\/+$/g, "")
@@ -188,12 +314,20 @@ export default {
             filename = "converted-document";
           }
         } else if (data.html) {
-          const title = await page.title();
+          try {
+            const title = await page.title();
 
-          if (title && title.trim()) {
-            filename = safeFilename(title);
+            if (title && title.trim()) {
+              filename = safeFilename(title);
+            }
+          } catch {
+            filename = "converted-document";
           }
         }
+
+        // --------------------------------------------------
+        // GENERATE PDF
+        // --------------------------------------------------
 
         const pdf = await page.pdf({
           format: data.pageSize || "A4",
@@ -217,9 +351,10 @@ export default {
       } catch (error) {
         return new Response(
           "PDF generation failed: " + error.message,
-          { status: 500 }
+          {
+            status: 500,
+          }
         );
-
       } finally {
         if (browser) {
           try {
